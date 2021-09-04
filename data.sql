@@ -93,18 +93,6 @@ insert into goods (id, type_of_goods_id, `name`) value (null, 3, 'Block Gripper'
 insert into goods_description(goods_id, spec_type_of_good_id, values_of_spec_type_id) value (6, 5, 6);
 insert into goods_description(goods_id, spec_type_of_good_id, values_of_spec_type_id) value (6, 6, 9);
 
-/*
-# select tog.name,
-#        tog.id,
-#        stog.name,
-#        stog.id,
-#        vost.value,
-#        vost.id
-# from type_of_goods tog
-# left join spec_type_of_goods stog on tog.id = stog.type_of_goods_id
-# left join values_of_spec_type vost on stog.id = vost.spec_type_of_good_id
-# order by tog.id;
-*/
 # Брак
 insert into leftover_goods(warehouse_id, goods_id, received, shipped, data) value (3, 6, 1, 0, '2021-01-30 00:00:00');
 
@@ -192,6 +180,3 @@ select id                                                                       
            else (select sum(amount) from order_rows where orders.id = order_rows.order_id)  end as debt
 from orders;
 
-delete
-from type_of_goods
-where id between 0 and 2;

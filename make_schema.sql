@@ -189,17 +189,3 @@ create index logs_order_id_index
 
 create index logs_order_rows_id_index
 	on logs (order_rows_id);
-
-
-
-
-
-
-
-
-
-
-
-
-
-

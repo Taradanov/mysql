@@ -26,13 +26,14 @@ from (select sum(received) as received, sum(shipped) as shipped, warehouse_id, g
          left join goods as t3 on t.goods_id = t3.id
 where t.received - t.shipped <> 0;
 
-select * from leftovers_view;
+select *
+from leftovers_view;
 
 #  въю список заказов
 create or replace view orders_condition as
 select t1.id,
-       (select name from clients where client_id = clients.id)        as client,
-       (select name from warehouse where warehouse_id = warehouse.id) as warehouse,
+       (select name from clients where client_id = clients.id)                as client,
+       (select name from warehouse where warehouse_id = warehouse.id)         as warehouse,
        t2.distinct_goods,
        (select sum(amount) from order_rows where order_rows.order_id = t1.id) as amount
 from orders as t1
@@ -49,12 +50,12 @@ create trigger create_order
 begin
     select cast((select name from clients where clients.id = NEW.client_id) as char) into @str;
     select cast((select sum(amount) from order_rows where order_rows.order_id = NEW.id) as char) into @amount;
-    insert into logs (order_id, condition_before, condition_after,operation)
+    insert into logs (order_id, condition_before, condition_after, operation)
         VALUE (NEW.id,
-               concat(' ', 'заказ id: ', cast(NEW.id as char ), ' клиент_id: ', cast(NEW.client_id as char), ' клиент: ',
+               concat(' ', 'заказ id: ', cast(NEW.id as char), ' клиент_id: ', cast(NEW.client_id as char), ' клиент: ',
                       @str, ' сумма: ', @amount),
                '',
-              'new_order');
+               'new_order');
 end;
 
 
@@ -64,11 +65,11 @@ create function get_name(name_ varchar(20), id_ int unsigned)
 begin
     set @str = '';
     if name_ = 'clients' then
-        select cast((select name from clients where clients.id = id_) as char ) into @str;
+        select cast((select name from clients where clients.id = id_) as char) into @str;
     elseif name_ = 'warehouse' then
-        select cast((select name from warehouse where warehouse.id = id_) as char ) into @str;
+        select cast((select name from warehouse where warehouse.id = id_) as char) into @str;
     elseif name_ = 'goods' then
-        select cast((select name from goods where goods.id = id_) as char ) into @str;
+        select cast((select name from goods where goods.id = id_) as char) into @str;
     end if;
     return @str;
 end;
@@ -76,62 +77,60 @@ end;
 drop procedure if exists log_insert_or_delete_order_row;
 
 create procedure log_insert_or_delete_order_row(
-                        IN order_id_ int unsigned,
-                        IN order_rows_id_ int unsigned,
-                        IN goods_id_ int unsigned,
-                        IN quantity_ int unsigned,
-                        IN price_ int unsigned,
-                        IN amount_ int unsigned,
-                        IN operation_ varchar(20))
+    IN order_id_ int unsigned,
+    IN order_rows_id_ int unsigned,
+    IN goods_id_ int unsigned,
+    IN quantity_ int unsigned,
+    IN price_ int unsigned,
+    IN amount_ int unsigned,
+    IN operation_ varchar(20))
 begin
-    set @condition_after =  concat(
-        'заказ id: ', cast(order_id_ as char ),
-        ' строка заказа: ', cast(order_rows_id_ as char ),
-        ' товар: ', get_name('goods', goods_id_),
-        ' количество: ', cast(quantity_ as char ),
-        ' цена: ', cast(price_ as char ),
-        ' сумма: ', cast(amount_ as char )
+    set @condition_after = concat(
+            'заказ id: ', cast(order_id_ as char),
+            ' строка заказа: ', cast(order_rows_id_ as char),
+            ' товар: ', get_name('goods', goods_id_),
+            ' количество: ', cast(quantity_ as char),
+            ' цена: ', cast(price_ as char),
+            ' сумма: ', cast(amount_ as char)
         );
     insert into logs(order_id, order_rows_id, condition_after, operation)
-    value (order_id_,order_rows_id_, @condition_after, operation_ );
+        value (order_id_, order_rows_id_, @condition_after, operation_);
 end;
 
 
 create procedure log_update_order_row(
-                        IN order_id_ int unsigned,
-                        IN order_rows_id_ int unsigned,
-                        IN goods_id_ int unsigned,
-                        IN quantity_ int unsigned,
-                        IN price_ int unsigned,
-                        IN amount_ int unsigned,
-
-                        IN goods_id_old int unsigned,
-                        IN quantity_old int unsigned,
-                        IN price_old int unsigned,
-                        IN amount_old int unsigned,
-
-                        IN operation_ varchar(20))
+    IN order_id_ int unsigned,
+    IN order_rows_id_ int unsigned,
+    IN goods_id_ int unsigned,
+    IN quantity_ int unsigned,
+    IN price_ int unsigned,
+    IN amount_ int unsigned,
+    IN goods_id_old int unsigned,
+    IN quantity_old int unsigned,
+    IN price_old int unsigned,
+    IN amount_old int unsigned,
+    IN operation_ varchar(20))
 begin
 
-        set @condition_before =  concat(
-        'заказ id: ', cast(order_id_ as char ),
-        ' строка заказа: ', cast(order_rows_id_ as char ),
-        ' товар: ', get_name('goods', goods_id_old),
-        ' количество: ', cast(quantity_old as char ),
-        ' цена: ', cast(price_old as char ),
-        ' сумма: ', cast(amount_old as char )
+    set @condition_before = concat(
+            'заказ id: ', cast(order_id_ as char),
+            ' строка заказа: ', cast(order_rows_id_ as char),
+            ' товар: ', get_name('goods', goods_id_old),
+            ' количество: ', cast(quantity_old as char),
+            ' цена: ', cast(price_old as char),
+            ' сумма: ', cast(amount_old as char)
         );
 
-    set @condition_after =  concat(
-        'заказ id: ', cast(order_id_ as char ),
-        ' строка заказа: ', cast(order_rows_id_ as char ),
-        ' товар: ', get_name('goods', goods_id_),
-        ' количество: ', cast(quantity_ as char ),
-        ' цена: ', cast(price_ as char ),
-        ' сумма: ', cast(amount_ as char )
+    set @condition_after = concat(
+            'заказ id: ', cast(order_id_ as char),
+            ' строка заказа: ', cast(order_rows_id_ as char),
+            ' товар: ', get_name('goods', goods_id_),
+            ' количество: ', cast(quantity_ as char),
+            ' цена: ', cast(price_ as char),
+            ' сумма: ', cast(amount_ as char)
         );
     insert into logs(order_id, order_rows_id, condition_before, condition_after, operation)
-    value (order_id_,order_rows_id_, @condition_before, @condition_after, operation_ );
+        value (order_id_, order_rows_id_, @condition_before, @condition_after, operation_);
 end;
 
 
@@ -143,14 +142,13 @@ create trigger create_row_on_order_rows
     for each row
 begin
     call log_insert_or_delete_order_row(
-        NEW.order_id,
-        NEW.id,
-        NEW.goods_id,
-        NEW.quantity,
-        NEW.price,
-        NEW.amount,
-        'insert_row'
-
+            NEW.order_id,
+            NEW.id,
+            NEW.goods_id,
+            NEW.quantity,
+            NEW.price,
+            NEW.amount,
+            'insert_row'
         );
 end;
 
@@ -160,13 +158,13 @@ create trigger del_row_on_order_rows
     for each row
 begin
     call log_insert_or_delete_order_row(
-        OLD.order_id,
-        OLD.id,
-        OLD.goods_id,
-        OLD.quantity,
-        OLD.price,
-        OLD.amount,
-        'delete_row'
+            OLD.order_id,
+            OLD.id,
+            OLD.goods_id,
+            OLD.quantity,
+            OLD.price,
+            OLD.amount,
+            'delete_row'
         );
 end;
 
@@ -176,19 +174,41 @@ create trigger update_row_on_order_rows
     for each row
 begin
     call log_update_order_row(
-        NEW.order_id,
-        NEW.id,
-        NEW.goods_id,
-        NEW.quantity,
-        NEW.price,
-        NEW.amount,
-
-        OLD.goods_id,
-        OLD.quantity,
-        OLD.price,
-        OLD.amount,
-
-        'update_row'
+            NEW.order_id,
+            NEW.id,
+            NEW.goods_id,
+            NEW.quantity,
+            NEW.price,
+            NEW.amount,
+            OLD.goods_id,
+            OLD.quantity,
+            OLD.price,
+            OLD.amount,
+            'update_row'
         );
 end;
 
+drop trigger if exists check_availability_goods;
+
+create trigger check_availability_goods
+    before insert
+    on order_rows
+    for each row
+begin
+    declare rollback_ bool default 0;
+    declare continue handler for sqlexception set rollback_ = 1;
+
+    select (select warehouse_id from orders where id = NEW.order_id) into @warehouse_id;
+    select sum(received) - sum(shipped) from leftover_goods where NEW.goods_id = leftover_goods.goods_id and @warehouse_id = leftover_goods.warehouse_id into @avail_on_warehouse;
+
+    set rollback_ = (@avail_on_warehouse >= NEW.quantity);
+
+    if @avail_on_warehouse < NEW.quantity then
+        set rollback_ = 1;
+     end if;
+
+     if `rollback_` then
+        signal sqlstate '45000' set message_text = 'Нет товара.', mysql_errno = 2000;
+     end if;
+
+end; 
