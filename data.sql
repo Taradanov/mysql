@@ -15,8 +15,6 @@ insert into type_of_goods(name)
 values ('Процессоры'),
        ('Видеокарты'),
        ('Велосипеды');
-# todo При удалении вида номенклатуры  проверять что нет подчиненных,
-#  причем если нет номенклатуры-давать удалять, если есть номенклатура-не удалять
 
 insert into spec_type_of_goods(name, type_of_goods_id)
 values ('Производитель', 1),
@@ -94,7 +92,7 @@ insert into goods (id, type_of_goods_id, `name`) value (null, 3, 'Block Gripper'
 
 insert into goods_description(goods_id, spec_type_of_good_id, values_of_spec_type_id) value (6, 5, 6);
 insert into goods_description(goods_id, spec_type_of_good_id, values_of_spec_type_id) value (6, 6, 9);
-# todo Вьюха остатки товара на складах
+
 /*
 # select tog.name,
 #        tog.id,
@@ -112,12 +110,88 @@ insert into leftover_goods(warehouse_id, goods_id, received, shipped, data) valu
 
 # Офис
 insert into leftover_goods(warehouse_id, goods_id, received, shipped, data)
-values (2, 2, 5, 0, '2021-02-30 00:00:00'),
+values (2, 2, 5, 0, '2021-02-27 00:00:00'),
        (2, 2, 0, 2, '2021-02-28 00:00:00'),
        (2, 2, 0, 1, '2021-03-30 00:00:00');
 
 # Основной склад
 insert into leftover_goods(warehouse_id, goods_id, received, shipped, data)
-values (1, 2, 5, 0, '2021-02-30 00:00:00'),
-       (1, 2, 0, 2, '2021-02-28 00:00:00'),
-       (1, 2, 0, 1, '2021-03-30 00:00:00');
+values (1, 2, 7, 0, '2021-02-24 00:00:00'),
+       (1, 2, 0, 6, '2021-04-28 00:00:00'),
+       (1, 2, 2, 1, '2021-04-10 00:00:00'),
+       (1, 2, 2, 0, '2021-04-20 00:00:00'),
+       (1, 2, 0, 2, '2021-05-10 00:00:00'),
+       (1, 2, 0, 1, '2021-05-30 00:00:00');
+
+insert into leftover_goods(warehouse_id, goods_id, received, shipped, data)
+values (1, 3, 10, 0, '2021-02-24 00:00:00'),
+       (1, 3, 0, 6, '2021-04-16 00:00:00'),
+       (1, 3, 2, 0, '2021-04-25 00:00:00'),
+       (1, 3, 0, 5, '2021-06-20 00:00:00'),
+       (1, 3, 0, 1, '2021-06-10 00:00:00'),
+       (1, 3, 4, 0, '2021-07-30 00:00:00');
+
+insert into leftover_goods(warehouse_id, goods_id, received, shipped, data)
+values (1, 4, 1, 0, '2021-02-20 00:00:00'),
+       (1, 4, 1, 0, '2021-04-27 00:00:00'),
+       (1, 4, 2, 0, '2021-04-11 00:00:00'),
+       (1, 4, 1, 0, '2021-04-21 00:00:00'),
+       (1, 4, 0, 4, '2021-05-11 00:00:00'),
+       (1, 4, 4, 0, '2021-06-03 00:00:00');
+
+insert into leftover_goods(warehouse_id, goods_id, received, shipped, data)
+values (1, 5, 10, 0, '2021-03-20 00:00:00'),
+       (1, 5, 10, 0, '2021-04-29 00:00:00'),
+       (1, 5, 2, 0, '2021-05-11 00:00:00'),
+       (1, 5, 1, 0, '2021-06-21 00:00:00'),
+       (1, 5, 0, 4, '2021-07-17 00:00:00'),
+       (1, 5, 0, 19, '2021-08-23 00:00:00');
+
+insert into leftover_goods(warehouse_id, goods_id, received, shipped, data)
+values (1, 6, 10, 0, '2021-05-20 00:00:00'),
+       (1, 6, 10, 0, '2021-06-29 00:00:00');
+
+insert into orders(client_id, warehouse_id)
+values (1, 1),
+       (2, 1),
+       (3, 2),
+       (4, 3),
+       (4, 1);
+
+# truncate table order_rows;
+
+# строки заказов
+insert into order_rows (order_id, goods_id, quantity, price)
+values (4, 6, 1, 50000),
+
+       (3, 2, 1, 25360),
+
+       (2, 1, 1, 35360),
+       (2, 3, 1, 19620),
+       (2, 3, 1, 18000),
+
+       (1, 3, 1, 19500),
+       (1, 4, 3, 125360),
+       (1, 6, 10, 59840);
+
+
+select id,
+       (select name from warehouse where warehouse_id = warehouse.id),
+       (select name from clients where client_id = clients.id),
+       client_id
+from orders;
+
+update order_rows
+set quantity = 2
+where id = 7;
+
+insert into orders_debt(order_id, debt)
+select id                                                                                  as orders_id,
+       case
+           when (select sum(amount) from order_rows where orders.id = order_rows.order_id) is null then 0
+           else (select sum(amount) from order_rows where orders.id = order_rows.order_id)  end as debt
+from orders;
+
+delete
+from type_of_goods
+where id between 0 and 2;

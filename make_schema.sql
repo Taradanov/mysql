@@ -17,15 +17,28 @@ create table if not exists clients
 create unique index clients_email_uindex
     on clients (email);
 
+# 2.1 Склады
+create table warehouse
+(
+    id   int unsigned auto_increment,
+    name varchar(100) not null,
+    constraint warehouse_pk
+        primary key (id)
+)
+comment 'Склады';
 # 3.1 Заказы
 create table orders
 (
-    id        int unsigned auto_increment,
-    client_id int unsigned not null,
+    id           int unsigned auto_increment,
+    client_id    int unsigned not null,
+    warehouse_id int unsigned not null,
     primary key (id),
     constraint orders_clients_id_fk
-        foreign key (client_id) references clients (id)
+        foreign key (client_id) references clients (id),
+    constraint orders_warehouse_id_fk
+        foreign key (warehouse_id) references warehouse (id)
 ) comment 'Заказы';
+
 
 create table magazin.orders_debt
 (
@@ -38,7 +51,6 @@ create table magazin.orders_debt
         foreign key (order_id) references magazin.orders (id)
 )
     comment 'Задолженность по заказам';
-
 
 create table type_of_goods
 (
@@ -65,8 +77,6 @@ create table spec_type_of_goods
 create unique index spec_type_of_goods_name_type_of_goods_id_uindex
     on spec_type_of_goods (name, type_of_goods_id);
 
-
-
 create table goods
 (
     id               int unsigned auto_increment,
@@ -82,32 +92,22 @@ create table goods
 create unique index goods_name_uindex
     on goods (name);
 
-
-# 2.1 Склады
-create table warehouse
-(
-    id   int unsigned auto_increment,
-    name varchar(100) not null,
-    constraint warehouse_pk
-        primary key (id)
-) comment 'Склады';
-
 create unique index warehouse_name_uindex
     on warehouse (name);
 
 create table leftover_goods
 (
-	warehouse_id int unsigned not null,
-	goods_id int unsigned not null,
-	received decimal(14,3) default 0 null,
-	shipped decimal(14,3) default 0 null,
-	data datetime default now() not null,
-	constraint leftover_goods_goods_id_fk
-		foreign key (goods_id) references goods (id),
-	constraint leftover_goods_warehouse_id_fk
-		foreign key (warehouse_id) references warehouse (id)
+    warehouse_id int unsigned                 not null,
+    goods_id     int unsigned                 not null,
+    received     decimal(14, 3) default 0     null,
+    shipped      decimal(14, 3) default 0     null,
+    data         datetime       default now() not null,
+    constraint leftover_goods_goods_id_fk
+        foreign key (goods_id) references goods (id),
+    constraint leftover_goods_warehouse_id_fk
+        foreign key (warehouse_id) references warehouse (id)
 )
-comment 'Движения товаров';
+    comment 'Движения товаров';
 
 create table values_of_spec_type
 (
@@ -134,7 +134,7 @@ create table goods_description
 ) comment 'Возможные значения';
 
 create unique index goods_spec_values_uindex
-	on goods_description (goods_id, spec_type_of_good_id, values_of_spec_type_id);
+    on goods_description (goods_id, spec_type_of_good_id, values_of_spec_type_id);
 
 alter table goods_description
     add constraint goods_description_goods_id_fk
@@ -148,45 +148,49 @@ alter table goods_description
     add constraint goods_description_values_of_spec_type_id_fk
         foreign key (values_of_spec_type_id) references values_of_spec_type (id);
 
-
 # 3.2 Строки заказа
 create table order_rows
 (
-    id       int unsigned auto_increment,
-    order_id int unsigned not null,
-    goods_id int unsigned null,
-    constraint order_rows_pk
-        primary key (id),
-    constraint order_rows_goods_id_fk
-        foreign key (goods_id) references goods (id),
-    constraint order_rows_orders_id_fk
-        foreign key (order_id) references orders (id)
+	id int unsigned auto_increment,
+	order_id int unsigned not null,
+	goods_id int unsigned null,
+	quantity int unsigned default 0 not null,
+	price int unsigned default 0 not null,
+	amount  int unsigned  as (price * quantity),
+		constraint order_rows_pk
+		primary key (id),
+	constraint order_rows_goods_id_fk
+		foreign key (goods_id) references goods (id),
+	constraint order_rows_orders_id_fk
+		foreign key (order_id) references orders (id)
+			on delete cascade
 )
-    comment 'Строки заказов';
+comment 'Строки заказов';
+
 
 
 # 4.1 Логирование
 create table logs
 (
-    id               int unsigned auto_increment,
-    order_id         int unsigned  null,
-    order_rows_id    int unsigned  null,
-    condition_before varchar(1000) null,
-    condition_after  varchar(1000) null,
-    constraint logs_pk
-        primary key (id),
-    constraint logs_order_rows_id_fk
-        foreign key (order_rows_id) references order_rows (id),
-    constraint logs_orders_id_fk
-        foreign key (order_id) references orders (id)
+	id int unsigned auto_increment,
+	order_id int unsigned null,
+	order_rows_id int unsigned null,
+	condition_before varchar(1000) null,
+	condition_after varchar(1000) null,
+	operation varchar(20) not null,
+	constraint logs_pk
+		primary key (id)
+
 )
-    comment 'История изменения заказов, логирование';
+comment 'История изменения заказов, логирование';
 
 create index logs_order_id_index
-    on logs (order_id);
+	on logs (order_id);
 
 create index logs_order_rows_id_index
-    on logs (order_rows_id);
+	on logs (order_rows_id);
+
+
 
 
 
